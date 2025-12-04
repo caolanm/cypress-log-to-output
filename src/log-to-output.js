@@ -138,6 +138,16 @@ function ensureRdpPort(args) {
   return port
 }
 
+function getRdpHost(args) {
+  const existing = args.find(arg => arg.slice(0, 26) === '--remote-debugging-address')
+
+  if (existing) {
+    return existing.split('=')[1]
+  }
+
+  return nil
+}
+
 function browserLaunchHandler(browser = {}, launchOptions) {
   const args = launchOptions.args || launchOptions
 
@@ -146,13 +156,16 @@ function browserLaunchHandler(browser = {}, launchOptions) {
   }
 
   const rdp = ensureRdpPort(args)
+  const host = getRdpHost(args)
 
   debugLog('Attempting to connect to Chrome Debugging Protocol')
 
   const tryConnect = () => {
-    new CDP({
-      port: rdp
-    })
+    const options = { port: rdp }
+    if (host) {
+        options.host = host
+    }
+    new CDP(options)
     .then((cdp) => {
       debugLog('Connected to Chrome Debugging Protocol')
 
